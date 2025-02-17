@@ -43,7 +43,10 @@ impl Finder {
             };
 
             let path = entry.path();
-            println!("{}", path.display());
+
+            if self.matches(&path) {
+                println!("{}", path.display());
+            }
 
             if path.is_dir() {
                 if let Err(e) = self.walk_dir(&path) {
@@ -53,6 +56,24 @@ impl Finder {
         }
 
         Ok(())
+    }
+
+    fn matches(&self, path: &PathBuf) -> bool {
+        if self.expression.is_empty() {
+            return false;
+        }
+
+        if self.expression.len() >= 2 && self.expression[0] == "-name" {
+            if let Some(file_name) = path.file_name() {
+                if let Some(file_name_str) = file_name.to_str() {
+                    let pattern = self.expression[1].replace("*", ".*");
+                    return regex::Regex::new(&pattern)
+                        .map(|re| re.is_match(file_name_str))
+                        .unwrap_or(false);
+                }
+            }
+        }
+        false
     }
 }
 
